@@ -9,16 +9,12 @@
 <body>
 <div class="container card mt-5 flex-column vh-50">
     <div class="card-body" style="height:600px">
-        <h2 class="text-center mt-2" th:text="${question.japanese}">Question</h2>
+        <h2 class="text-center">Great!/Try Again!</h2>
         <hr/>
-        <form method="post" class="d-grid gap-2" th:object="${myForm}" th:action="@{/answer}">
-            <input type="hidden" th:field="*{question}" th:value="${question.id}" />
-            <div th:each="option : ${options}">
-                <input class="form-check-input" type="radio" th:field="*{answer}" th:value="${option.id}" />
-                <label th:text="${option.english}"></label>
-            </div>
-            <input type="submit" class="btn btn-primary btn-lg mt-3 p-4" value="answer" />
-        </form>
+        <p class="text-center" id="score" style="font-size: 150px;"><span th:text="${score}"></span>/<span th:text="${questionNumber}"></span></p>
+        <div class="d-grid gap-2">
+            <a th:href="@{/home}" class="btn btn-primary btn-lg mt-3 p-4">Restart Quiz</a>
+        </div>
     </div>
 </div>
 

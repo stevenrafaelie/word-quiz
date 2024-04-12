@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Random;
 
 @Controller
-public class Quiz {
+public class QuizController {
 
     private final String QUESTION_NUMBER = "questionNumber";
     private final String SCORE_NUMBER = "scoreNumber";
@@ -26,7 +26,7 @@ public class Quiz {
     private final QuizService quizService;
 
     @Autowired
-    public Quiz(QuizService quizService) {
+    public QuizController(QuizService quizService) {
         this.quizService = quizService;
     }
 
@@ -51,39 +51,41 @@ public class Quiz {
         HttpSession httpSession = httpServletRequest.getSession();
         Integer questionNumber = (Integer) httpSession.getAttribute(QUESTION_NUMBER);
         Integer scoreNumber = (Integer) httpSession.getAttribute(SCORE_NUMBER);
-        List<Long> listOfWord = (ArrayList<Long>) httpSession.getAttribute(LIST_OF_QUIZ_WORD);
-
+        List<Long> listOfShownWord = (ArrayList<Long>) httpSession.getAttribute(LIST_OF_QUIZ_WORD);
         //If more than 10 question to final
-        if (questionNumber >= 10) {
-            return "redirect:/final";
+        if (questionNumber >= 5) {
+            return "redirect:/score";
         }
         //add quiz number + 1
-        scoreNumber += 1;
-        httpSession.setAttribute(QUESTION_NUMBER, scoreNumber);
+        questionNumber += 1;
+        httpSession.setAttribute(QUESTION_NUMBER, questionNumber);
 
         //fetch random word by random number from 0 to word limit
         Random rand = new Random();
         int randomNumber = rand.nextInt(WORD_LIMITER);
-        Word question  = quizService.getWord((long) randomNumber);
-        listOfWord.add(question.getId());
-        httpSession.setAttribute(LIST_OF_QUIZ_WORD,listOfWord);
+        //Here check list of shown word before shown
+        List<Word> listPotentialQuestion  = quizService.getWord();
+        Word question = listPotentialQuestion.get(randomNumber);
+        listOfShownWord.add(question.getId());
+        System.out.println(listOfShownWord);
+        httpSession.setAttribute(LIST_OF_QUIZ_WORD,listOfShownWord);
         model.addAttribute("question", question);
         //add option word
-        List<Long> wordIds = new ArrayList<>();
-        wordIds.add(question.getId());
+        List<Integer> wordIds = new ArrayList<>();
+        wordIds.add(question.getId().intValue());
         List<Word> wordList = new ArrayList<>();
         while (wordIds.size() < 4) {
             //Generate number
-            int randomNumberLoop = rand.nextInt(WORD_LIMITER) + 1;
+            int randomNumberLoop = rand.nextInt(WORD_LIMITER);
             //Check if that number is used
-            if (!wordIds.contains((long) randomNumberLoop)) {
+            if (!wordIds.contains(randomNumberLoop)) {
                 //add to wordId if not used
-                wordIds.add((long) randomNumberLoop);
+                wordIds.add(randomNumberLoop);
             }
         }
-        for (Long wordId : wordIds) {
+        for (Integer wordId : wordIds) {
             //add word
-            Word word = quizService.getWord(wordId);
+            Word word = quizService.getTheWord(Long.valueOf(wordId));
             wordList.add(word);
         }
         //Shuffling word
@@ -97,12 +99,31 @@ public class Quiz {
 
     @PostMapping("/answer")
     public String answer(@ModelAttribute(value = "myForm") QuizForm quizForm,
-                         Model model) {
+                         Model model,
+                         HttpServletRequest httpServletRequest) {
         boolean status =  false;
+        HttpSession httpSession = httpServletRequest.getSession();
         if (quizForm.getQuestion().equals(quizForm.getAnswer())) {
             status = true;
+            Integer score = (Integer) httpSession.getAttribute(SCORE_NUMBER);
+            score += 1;
+            httpSession.setAttribute(SCORE_NUMBER, score);
+            //quizService.plusOneMasteryWord(quizForm.getQuestion());
         }
+        Word rightWord = quizService.getTheWord(quizForm.getQuestion());
+        model.addAttribute("question", rightWord);
         model.addAttribute("status", status);
         return "conclusion";
+    }
+
+    @GetMapping("/score")
+    public String score(HttpServletRequest httpServletRequest,
+                        Model model) {
+        HttpSession httpSession = httpServletRequest.getSession();
+        Integer score = (Integer) httpSession.getAttribute(SCORE_NUMBER);
+        Integer questionNumber = (Integer) httpSession.getAttribute(QUESTION_NUMBER);
+        model.addAttribute("score", score);
+        model.addAttribute("questionNumber", questionNumber);
+        return "score";
     }
 }
