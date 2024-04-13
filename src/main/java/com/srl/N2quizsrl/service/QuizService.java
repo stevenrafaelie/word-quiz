@@ -25,11 +25,15 @@ public class QuizService {
     public void plusOneMasteryWord(Long theId) {
         Optional<Word> theWord = wordRepository.findById(theId);
         theWord.ifPresent(word -> word.setMastery(word.getMastery() + 1));
+        wordRepository.save(theWord.get());
+        System.out.println(theWord.get().getMastery());
     }
 
-    public Word getTheWord(Long theId){
-        Optional<Word> theWord = wordRepository.findById(theId);
-        return theWord.orElse(null);
+    public List<Word> getTheWord(){
+        return wordRepository.findTop100By();
+    }
 
+    public Word getWordWithId(Long theId) {
+        return wordRepository.findById(theId).get();
     }
 }

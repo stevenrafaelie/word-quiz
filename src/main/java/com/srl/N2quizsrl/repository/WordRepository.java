@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface WordRepository extends JpaRepository<Word, Long> {
     List<Word> findTop100ByOrderByMasteryAsc();
+    List<Word> findTop100By();
 }

@@ -22,8 +22,8 @@ public class QuizController {
     private final String QUESTION_NUMBER = "questionNumber";
     private final String SCORE_NUMBER = "scoreNumber";
     private final String LIST_OF_QUIZ_WORD = "listOfQuizWord";
-    private final Integer WORD_LIMITER = 100;
     private final QuizService quizService;
+    private final Integer WORD_LIMITER = 100;
 
     @Autowired
     public QuizController(QuizService quizService) {
@@ -35,7 +35,7 @@ public class QuizController {
         HttpSession httpSession = httpServletRequest.getSession(true);
         httpSession.setAttribute(QUESTION_NUMBER, 0);
         httpSession.setAttribute(SCORE_NUMBER, 0);
-        httpSession.setAttribute(LIST_OF_QUIZ_WORD, new ArrayList<Long>());
+        httpSession.setAttribute(LIST_OF_QUIZ_WORD, new ArrayList<Integer>());
         return "home";
     }
 
@@ -50,8 +50,7 @@ public class QuizController {
         //get session
         HttpSession httpSession = httpServletRequest.getSession();
         Integer questionNumber = (Integer) httpSession.getAttribute(QUESTION_NUMBER);
-        Integer scoreNumber = (Integer) httpSession.getAttribute(SCORE_NUMBER);
-        List<Long> listOfShownWord = (ArrayList<Long>) httpSession.getAttribute(LIST_OF_QUIZ_WORD);
+        List<Integer> listOfShownWord = (ArrayList<Integer>) httpSession.getAttribute(LIST_OF_QUIZ_WORD);
         //If more than 10 question to final
         if (questionNumber >= 5) {
             return "redirect:/score";
@@ -62,32 +61,37 @@ public class QuizController {
 
         //fetch random word by random number from 0 to word limit
         Random rand = new Random();
-        int randomNumber = rand.nextInt(WORD_LIMITER);
+
+        Integer randomNumber = rand.nextInt(WORD_LIMITER);
+        while (listOfShownWord.contains(randomNumber)) {
+            randomNumber = rand.nextInt(WORD_LIMITER);
+        }
+        listOfShownWord.add(randomNumber);
+
         //Here check list of shown word before shown
         List<Word> listPotentialQuestion  = quizService.getWord();
         Word question = listPotentialQuestion.get(randomNumber);
-        listOfShownWord.add(question.getId());
-        System.out.println(listOfShownWord);
         httpSession.setAttribute(LIST_OF_QUIZ_WORD,listOfShownWord);
         model.addAttribute("question", question);
+
         //add option word
         List<Integer> wordIds = new ArrayList<>();
-        wordIds.add(question.getId().intValue());
-        List<Word> wordList = new ArrayList<>();
-        while (wordIds.size() < 4) {
+        while (wordIds.size() < 3) {
             //Generate number
-            int randomNumberLoop = rand.nextInt(WORD_LIMITER);
+            Integer randomNumberLoop = rand.nextInt(WORD_LIMITER);
             //Check if that number is used
             if (!wordIds.contains(randomNumberLoop)) {
                 //add to wordId if not used
                 wordIds.add(randomNumberLoop);
             }
         }
+        List<Word> wordList = new ArrayList<>();
         for (Integer wordId : wordIds) {
             //add word
-            Word word = quizService.getTheWord(Long.valueOf(wordId));
+            Word word  = listPotentialQuestion.get(wordId);
             wordList.add(word);
         }
+        wordList.add(question);
         //Shuffling word
         Collections.shuffle(wordList);
         model.addAttribute("options", wordList);
@@ -108,9 +112,9 @@ public class QuizController {
             Integer score = (Integer) httpSession.getAttribute(SCORE_NUMBER);
             score += 1;
             httpSession.setAttribute(SCORE_NUMBER, score);
-            //quizService.plusOneMasteryWord(quizForm.getQuestion());
+            quizService.plusOneMasteryWord(quizForm.getQuestion());
         }
-        Word rightWord = quizService.getTheWord(quizForm.getQuestion());
+        Word rightWord = quizService.getWordWithId(quizForm.getQuestion());
         model.addAttribute("question", rightWord);
         model.addAttribute("status", status);
         return "conclusion";
