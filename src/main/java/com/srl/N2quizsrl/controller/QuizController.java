@@ -6,6 +6,9 @@ import com.srl.N2quizsrl.service.QuizService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +33,17 @@ public class QuizController {
         this.quizService = quizService;
     }
 
+    @GetMapping("/")
+    public String redirect(Model model) {
+        Pageable getPage = PageRequest.of(0, 10);
+        Page<Word> pageOn = quizService.getPageNumber(getPage);
+        int angka = pageOn.getTotalPages();
+        Pageable pageNow = pageOn.getPageable();
+        model.addAttribute("totalPage", angka);
+        model.addAttribute("pageNow", pageNow.getPageNumber());
+        return "index";
+    }
+
     @GetMapping("/home")
     public String getHome(HttpServletRequest httpServletRequest) {
         HttpSession httpSession = httpServletRequest.getSession(true);
@@ -42,11 +56,14 @@ public class QuizController {
     @GetMapping("/quiz")
     public String getQuiz(HttpServletRequest httpServletRequest,
                           Model model)  {
-        String referer = httpServletRequest.getHeader("referer");
-        //Check referer
-        if (!referer.contains("/home") && !referer.contains("/answer")) {
-            return "redirect:/";
+        try {
+            String referer = httpServletRequest.getHeader("referer");
+        } catch (NullPointerException e) {
+            return "redirect:/home";
         }
+
+        //Check referer
+
         //get session
         HttpSession httpSession = httpServletRequest.getSession();
         Integer questionNumber = (Integer) httpSession.getAttribute(QUESTION_NUMBER);

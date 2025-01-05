@@ -3,8 +3,9 @@ package com.srl.N2quizsrl.service;
 import com.srl.N2quizsrl.entity.Word;
 import com.srl.N2quizsrl.repository.WordRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -35,5 +36,10 @@ public class QuizService {
 
     public Word getWordWithId(Long theId) {
         return wordRepository.findById(theId).get();
+    }
+
+    public Page<Word> getPageNumber(Pageable pageable) {
+        return wordRepository.findAll(pageable);
+
     }
 }
